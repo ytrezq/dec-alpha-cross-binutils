@@ -1,12 +1,13 @@
 #!/bin/sh
-# mkaxp64 - build a Windows AXP64 (DEC Alpha 64-bit) PE from C sources.
+# mkaxp64 - build a Windows AXP64 (DEC Alpha 64-bit) PE from C or Alpha
+#           assembly sources (.c, .s, .S, or pre-built .o).
 #
 #   mkaxp64.sh -o app.exe --base 0x400000 --entry entry \
 #              --import "KERNEL32.dll:Foo,Bar" [--export Baz] file.c ...
 #
 # There is no Alpha-PE toolchain in existence (LLVM dropped its Alpha
 # backend in 3.0; binutils has no alpha-pe target), so the route is:
-#   C --gcc--> Alpha ELF --ld--> image at a fixed base --elf2pe--> AXP64 PE
+#   C/asm --gcc--> Alpha ELF --ld--> image at a fixed base --elf2pe--> AXP64 PE
 set -e
 HERE=$(dirname "$0")
 OUT=a.exe; BASE=0x400000; ENTRY=entry; DLL=""; IMPORTS=""; EXPORTS=""; SRCS=""
@@ -26,10 +27,19 @@ while [ $# -gt 0 ]; do
 done
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 OBJS=""
+n=0
 for s in $SRCS; do
-  o="$TMP/$(basename "$s" .c).o"
-  alpha-linux-gnu-gcc -O2 -mcpu=ev6 -fno-pic -ffreestanding -fno-builtin $EXTRA_CFLAGS \
-      -fno-stack-protector -c -o "$o" "$s"
+  n=$((n+1))
+  o="$TMP/$(basename "${s%.*}").$n.o"
+  case "$s" in
+    *.o)                                    # already an object: pass through
+      OBJS="$OBJS $s"; continue;;
+    *.s|*.S)                                # Alpha assembly
+      alpha-linux-gnu-gcc -mcpu=ev6 -c -o "$o" "$s";;
+    *)                                      # C
+      alpha-linux-gnu-gcc -O2 -mcpu=ev6 -fno-pic -ffreestanding -fno-builtin \
+          $EXTRA_CFLAGS -fno-stack-protector -c -o "$o" "$s";;
+  esac
   OBJS="$OBJS $o"
 done
 # every imported symbol is defined as absolute 0 so that ld allocates a GOT

@@ -66,6 +66,21 @@ sparse export address table.
 | `axp64.ld.in` | the linker script template |
 | `tests/hello-gui.c` | a small Win32 GUI program to build |
 
+## Assembly in, AXP64 out
+
+`mkaxp64.sh` takes `.c`, `.s`, `.S` or pre-built `.o` — the input is the
+architecture, not a particular compiler. `tests/asm/axp64asm.s` is a complete
+Windows AXP64 program written by hand in Alpha assembly, using `CMPBGE`,
+`ZAPNOT` and the MVI instructions `PERR` and `MINUB8`; it checks its own
+results and exits accordingly. `prebuilt/` has it already built, along with
+the other examples.
+
+```sh
+./mkaxp64.sh -o axp64asm.exe --base 0x400000 --entry entry \
+    --import "KERNEL32.dll:OutputDebugStringA,ExitProcess" \
+    tests/asm/axp64asm.s
+```
+
 ## Does this actually port the ABI?
 
 No — not by itself, and that is the interesting part. `alpha-linux-gnu-gcc`
