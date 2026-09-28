@@ -80,6 +80,17 @@ real gap. `elf2pe.py` closes the procedure-value difference with a four-
 instruction thunk per export — `tests/pv/` is a controlled experiment showing
 what breaks without it.
 
+## Provenance and licensing
+
+This repository is a converter and a build driver. It contains no Microsoft
+code and no disassembly of any: it drives the distribution's stock
+`alpha-linux-gnu` GCC and binutils, and wraps the linked image in a PE
+container per the published PE/COFF specification.
+
+The measurements in [ABI.md](ABI.md) are analysis of a Microsoft-built binary
+you supply yourself — instruction counts, register statistics, unwind-record
+geometry. No Microsoft binary is redistributed here.
+
 ## Limitations
 
 * No base relocations, so each image must load at its preferred base. Every
