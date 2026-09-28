@@ -66,6 +66,20 @@ sparse export address table.
 | `axp64.ld.in` | the linker script template |
 | `tests/hello-gui.c` | a small Win32 GUI program to build |
 
+## Does this actually port the ABI?
+
+No — not by itself, and that is the interesting part. `alpha-linux-gnu-gcc`
+targets the SysV Alpha ABI; Windows AXP64 uses Microsoft's Alpha calling
+standard. Rewrapping the container changes neither.
+
+**[ABI.md](ABI.md)** measures the difference against a genuine
+Microsoft-built AXP64 binary rather than asserting it. Short version: the
+argument registers, return registers, callee-saved set and varargs layout are
+identical; `gp` and the procedure-value register are not, and unwind data is a
+real gap. `elf2pe.py` closes the procedure-value difference with a four-
+instruction thunk per export — `tests/pv/` is a controlled experiment showing
+what breaks without it.
+
 ## Limitations
 
 * No base relocations, so each image must load at its preferred base. Every
